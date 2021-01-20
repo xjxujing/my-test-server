@@ -76,6 +76,7 @@ router.post("/login", (req, res) => {
     const email = req.body.email;
     const password = req.body.password;
 
+    // console.log(User)
     // 查询数据库
     User.findOne({ email }).then((user) => {
         if (!user) {
@@ -100,7 +101,7 @@ router.post("/login", (req, res) => {
                         token: "Bearer " + token,
                     });
                 });
-                // return res.json({ msg: "succcess" });
+                // return res.json({ msg: "success" });
             } else {
                 return res.status(404).json({ msg: "密码错误！" });
             }

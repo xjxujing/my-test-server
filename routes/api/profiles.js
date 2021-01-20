@@ -5,6 +5,12 @@ const passpost = require("passport");
 
 const Profile = require("../../models/Profile");
 
+const STATUS = {
+    SUCCESS: '0',
+    ERROR: '-1',
+    LOGIN_TIMEOUT: '-2',
+    NO_PERMISSION: '-3'
+  }
 /**
  * $route GET api/profiles/test
  * @desc 返回的请求的 json 数据
@@ -21,16 +27,19 @@ router.get("/test", (req, res) => {
  * @access private
  */
 router.post("/add", passpost.authenticate("jwt", { session: false }), (req, res) => {
-    const profilesFileds = {};
-    if (req.body.img) profilesFileds.img = req.body.img;
-    if (req.body.name) profilesFileds.name = req.body.name;
-    if (req.body.text) profilesFileds.text = req.body.text;
-
+    const profilesFields = {};
+    
+    if (req.body.avatar) profilesFields.avatar = req.body.avatar;
+    if (req.body.name) profilesFields.name = req.body.name;
+    if (req.body.text) profilesFields.text = req.body.text;
+    if (req.body.age) profilesFields.age = req.body.age;
+    if (req.body.gender) profilesFields.gender = req.body.gender;
+    if (req.body.isVisible) profilesFields.isVisible = req.body.isVisible;
     if (req.body.imgs) {
-        profilesFileds.imgs = req.body.imgs.split("|");
+        profilesFields.imgs = req.body.imgs.split(",");
     }
 
-    new Profile(profilesFileds)
+    new Profile(profilesFields)
         .save()
         .then((profile) => {
             res.json(profile);
@@ -41,11 +50,11 @@ router.post("/add", passpost.authenticate("jwt", { session: false }), (req, res)
 });
 
 /**
- * $route GET api/profiles/latest
+ * $route GET api/profiles/list
  * @desc 下拉刷新
  * @access private
  */
-router.get("/latest", passpost.authenticate("jwt", { session: false }), (req, res) => {
+router.get("/list2333", passpost.authenticate("jwt", { session: false }), (req, res) => {
     Profile.find()
         .sort({ date: -1 })
         .then((profiles) => {
@@ -58,7 +67,10 @@ router.get("/latest", passpost.authenticate("jwt", { session: false }), (req, re
                         newProfiles.push(profiles[i]);
                     }
                 }
-                res.json(newProfiles);
+                res.json({
+                    status: STATUS.SUCCESS,
+                    data: newProfiles,
+                });
             }
         })
         .catch(() =>{
@@ -67,19 +79,20 @@ router.get("/latest", passpost.authenticate("jwt", { session: false }), (req, re
 });
 
 /**
- * $route GET api/profiles/:page/:size
- * @desc 上拉加载 10 条 下拉刷新请求 3 条，上拉加载请求 3 条
+ * $route POST /api/profiles/list
+ * @desc 
  * @access private
  */
-router.get("/:page/:size", passpost.authenticate("jwt", { session: false }), (req, res) => {
+router.post("/list", passpost.authenticate("jwt", { session: false }), (req, res) => {
+    console.log(req.body)
     Profile.find()
         .sort({ date: -1 })
         .then((profiles) => {
             if (!profiles) {
                 res.status(404).json("没有任何信息");
             } else {
-                let size = req.params.size;
-                let page = req.params.page;
+                let size = req.body.pageSize;
+                let page = req.body.page;
                 let index = size * (page - 1);
                 let newProfiles = [];
                 for (let i = index; i < size * page; i++) {
@@ -87,7 +100,15 @@ router.get("/:page/:size", passpost.authenticate("jwt", { session: false }), (re
                         newProfiles.unshift(profiles[i]);
                     }
                 }
-                res.json(newProfiles);
+                res.json(
+                    {
+                        status: STATUS.SUCCESS,
+                        data: newProfiles,
+                        page: page,
+                        pageSize: size,
+                        count: profiles.length
+                    }
+                );
             }
         })
         .catch((err) => res.status(404).json(err));

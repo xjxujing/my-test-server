@@ -7,11 +7,23 @@ const ProfileSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'users'
   },
-  img: {
+  name: {
     type: String,
     required: true
   },
-  name: {
+  avatar: {
+    type: String,
+    required: false
+  },
+  age: {
+    type: Number,
+    required: true
+  },
+  gender: { // 'MALE' || 'FEMALE
+    type: String,
+    required: true
+  },
+  isVisible: { // 'T' || 'F
     type: String,
     required: true
   },
