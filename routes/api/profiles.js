@@ -10,7 +10,7 @@ const STATUS = {
     ERROR: '-1',
     LOGIN_TIMEOUT: '-2',
     NO_PERMISSION: '-3'
-  }
+}
 /**
  * $route GET api/profiles/test
  * @desc 返回的请求的 json 数据
@@ -23,12 +23,12 @@ router.get("/test", (req, res) => {
 
 /**
  * $route POST api/profiles/add
- * @desc 创建朋友圈信息接口
+ * @desc 添加
  * @access private
  */
 router.post("/add", passpost.authenticate("jwt", { session: false }), (req, res) => {
     const profilesFields = {};
-    
+
     if (req.body.avatar) profilesFields.avatar = req.body.avatar;
     if (req.body.name) profilesFields.name = req.body.name;
     if (req.body.text) profilesFields.text = req.body.text;
@@ -42,19 +42,77 @@ router.post("/add", passpost.authenticate("jwt", { session: false }), (req, res)
     new Profile(profilesFields)
         .save()
         .then((profile) => {
-            res.json(profile);
+            res.json({
+                data: profile,
+                status: STATUS.SUCCESS
+            });
         })
         .catch((err) => {
             console.log(err);
         });
 });
 
+
 /**
- * $route GET api/profiles/list
- * @desc 下拉刷新
+ * $route POST api/profiles/delete
+ * @desc 添加
  * @access private
  */
-router.get("/list2333", passpost.authenticate("jwt", { session: false }), (req, res) => {
+router.post("/delete", passpost.authenticate("jwt", { session: false }), async (req, res) => {
+    const id = req.body._id
+
+    Profile.findByIdAndRemove(id, (err, profile) => {
+        // console.log('profile: ', {err, profile})
+        if (!profile) {
+            res.json({
+                status: STATUS.ERROR,
+                msg: '不存在该项'
+            })
+        } else {
+            res.json({
+                status: STATUS.SUCCESS,
+                msg: '删除成功'
+            })
+        }
+    })
+
+});
+
+/**
+ * $route POST api/profiles/batchDelete
+ * @desc 批量删除
+ * @access private
+ */
+router.post("/batchDelete", passpost.authenticate("jwt", { session: false }), async (req, res) => {
+    const ids = req.body.ids
+
+    const idsArray = ids.split(',')
+    Profile.deleteMany({
+        _id: {
+            $in: [...idsArray]
+        }
+    }, (err, result) => {
+        if (err) {
+            res.json({
+                status: STATUS.ERROR,
+                err: err
+            });
+        } else {
+            res.json({
+                status: STATUS.SUCCESS,
+                msg: '删除成功！'
+            })
+        }
+    })
+
+});
+
+/**
+ * $route GET api/profiles/list
+ * @desc 只有3条
+ * @access private
+ */
+router.get("/onlyThree", passpost.authenticate("jwt", { session: false }), (req, res) => {
     Profile.find()
         .sort({ date: -1 })
         .then((profiles) => {
@@ -73,7 +131,7 @@ router.get("/list2333", passpost.authenticate("jwt", { session: false }), (req, 
                 });
             }
         })
-        .catch(() =>{
+        .catch(() => {
             console.log(456)
         });
 });
@@ -83,8 +141,28 @@ router.get("/list2333", passpost.authenticate("jwt", { session: false }), (req, 
  * @desc 
  * @access private
  */
-router.post("/list", passpost.authenticate("jwt", { session: false }), (req, res) => {
-    console.log(req.body)
+router.post("/list", (req, res, next) => {
+    passpost.authenticate("jwt", { session: false }, (err, user, info) => {
+        // console.log({ err, user, info })
+        if (err) {
+            res.json({ msg: '出现错误' })
+            return
+        }
+        if (!user) {
+            res.json({ status: STATUS.NO_PERMISSION, msg: '没有访问权限' })
+            return
+        }
+        fetchProfiledData(req, res)
+
+        // req.logIn(user, function (err) {
+        //     console.log('req-------', req)
+        //     if (err) { return next(err); }
+        //     return res.redirect('/users/' + user.username);
+        // });
+    })(req, res, next);
+});
+
+function fetchProfiledData(req, res) {
     Profile.find()
         .sort({ date: -1 })
         .then((profiles) => {
@@ -112,6 +190,7 @@ router.post("/list", passpost.authenticate("jwt", { session: false }), (req, res
             }
         })
         .catch((err) => res.status(404).json(err));
-});
+
+}
 
 module.exports = router;
