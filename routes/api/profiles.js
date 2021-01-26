@@ -22,6 +22,32 @@ router.get("/test", (req, res) => {
 });
 
 /**
+ * $route POST api/profiles/find
+ * @desc 查
+ * @access private
+ */
+router.post("/find", passpost.authenticate("jwt", { session: false }), (req, res) => {
+    const id = req.body.id
+    Profile.findById(id, (err, profile) => {
+        if (!err && profile) {
+            res.json({
+                status: STATUS.SUCCESS,
+                data: profile
+            })
+        }
+        if (!profile) {
+            res.json({ status: STATUS.ERROR, msg: '没有找到数据' })
+            return
+        }
+        if (err) {
+            res.json({ status: STATUS.ERROR, err: err })
+        }
+
+    })
+});
+
+
+/**
  * $route POST api/profiles/add
  * @desc 添加
  * @access private
@@ -50,6 +76,31 @@ router.post("/add", passpost.authenticate("jwt", { session: false }), (req, res)
         .catch((err) => {
             console.log(err);
         });
+});
+
+
+
+/**
+ * $route POST api/profiles/update
+ * @desc 修改
+ * @access private
+ */
+router.post("/update", passpost.authenticate("jwt", { session: false }), async (req, res) => {
+    const id = req.body._id
+    Profile.findByIdAndUpdate(id, { ...req.body }, (err, profile) => {
+        if (!err && profile) {
+            res.json({
+                status: STATUS.SUCCESS,
+                data: profile
+            })
+        } else {
+            res.json({
+                status: STATUS.ERROR,
+                err: err
+            })
+        }
+    })
+
 });
 
 
@@ -108,7 +159,7 @@ router.post("/batchDelete", passpost.authenticate("jwt", { session: false }), as
 });
 
 /**
- * $route GET api/profiles/list
+ * $route GET api/profiles/onlyThree
  * @desc 只有3条
  * @access private
  */
@@ -154,16 +205,17 @@ router.post("/list", (req, res, next) => {
         }
         fetchProfiledData(req, res)
 
-        // req.logIn(user, function (err) {
-        //     console.log('req-------', req)
-        //     if (err) { return next(err); }
-        //     return res.redirect('/users/' + user.username);
-        // });
     })(req, res, next);
 });
 
 function fetchProfiledData(req, res) {
-    Profile.find()
+    console.log(req.body)
+
+    const findData = {
+        name: req.body.s_name ?  {$regex: `${req.body.s_name}`} : {$regex: ''}
+    }
+
+    Profile.find(findData)
         .sort({ date: -1 })
         .then((profiles) => {
             if (!profiles) {
@@ -175,7 +227,7 @@ function fetchProfiledData(req, res) {
                 let newProfiles = [];
                 for (let i = index; i < size * page; i++) {
                     if (profiles[i] != null) {
-                        newProfiles.unshift(profiles[i]);
+                        newProfiles.push(profiles[i]);
                     }
                 }
                 res.json(
