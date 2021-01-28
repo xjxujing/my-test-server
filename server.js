@@ -5,9 +5,11 @@ const passport = require("passport");
 const cors = require('cors');
 const app = express();
 
-// 引入 users.js
 const users = require("./routes/api/users");
 const profiles = require("./routes/api/profiles");
+const upload = require("./routes/api/upload");
+const dirs = require("./routes/api/dirs");
+
 
 // db config
 const db = require("./config/keys").mongoURI;
@@ -30,7 +32,7 @@ require("./config/passport")(passport);
 
 // connect to mongodb
 mongoose.connect(db, { useNewUrlParser: true, useUnifiedTopology: true }).then(
-    () => console.log("successes! MonggoDB Connected"),
+    () => console.log("successes! MongoDB Connected"),
     (err) => console.log('error!', err)
 );
 
@@ -41,6 +43,8 @@ app.get("/", (req, res) => {
 // 使用 routes
 app.use("/api/users", users);
 app.use("/api/profiles", profiles);
+app.use("/api/upload", upload);
+app.use("/api/dirs", dirs);
 
 const port = process.env.PORT || 5000;
 
