@@ -163,43 +163,23 @@ router.post("/list", (req, res, next) => {
             res.json({ status: STATUS_CODE.NO_PERMISSION, msg: '没有访问权限' })
             return
         }
-        fetchDirsdData(req, res)
+        fetchDirsData(req, res)
 
     })(req, res, next);
 });
 
-function fetchDirsdData(req, res) {
-    Dirs.find()
-        .sort({ date: -1 })
-        .then((dirs) => {
-
-            if (!dirs) {
-                res.status(404).json("没有任何信息");
-            } else {
-                // const dirsData = convert(dirs)
-                // // console.log(convert(dirs))
-                const roots = getRoot(data)
-                for (const root of roots) {
-                    console.log('root')
-                    for (const item of dirs) {
-                        if (item.parentId === root._id) {
-                            if (!root.children) {
-                                root.children = []
-                            }
-                            root.children.push(item)
-                        }
-                    }
-                }
-
-                console.log('78979879879//')
-                res.json({
-                    data: dirs,
-                    status: STATUS_CODE.SUCCESS,
-                })
-            }
-        })
-        .catch((err) => res.status(404).json(err));
-
+async function fetchDirsData(req, res) {
+    const newDirs = []
+    const dirs = await Dirs.find()
+    for (const dir of dirs) {
+        newDirs.push(dir.toJSON())
+    }
+    
+    const dirsData = convert(newDirs)
+    res.json({
+        data: dirsData,
+        status: STATUS_CODE.SUCCESS,
+    })
 }
 
 
@@ -225,11 +205,13 @@ function convert(list) {
     return res
 }
 
-function getRoot(list) {
-    const roots = []
-    for(const item of list) {
-        if (!item.parentId) {
-            roots.push(item)
+function getRoots(dirs) {
+    let roots = [];
+    for (let i = 0; i < dirs.length; i++) {
+        if (!dirs[i].parentId) {
+            // roots.push(JSON.parse(JSON.stringify(dirs[i])));
+            roots.push(dirs[i]);
+
         }
     }
 

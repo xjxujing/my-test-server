@@ -20,4 +20,6 @@ const DirsSchema = new Schema({
   }
 });
 
-module.exports = Profile = mongoose.model('dirs', DirsSchema);
+
+DirsSchema.set('toObject')
+module.exports = Dirs = mongoose.model('dirs', DirsSchema);

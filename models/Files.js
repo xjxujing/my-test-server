@@ -40,4 +40,4 @@ const FilesSchema = new Schema({
   }
 });
 
-module.exports = Profile = mongoose.model('files', FilesSchema);
+module.exports = Files = mongoose.model('files', FilesSchema);
