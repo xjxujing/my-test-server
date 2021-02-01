@@ -17,6 +17,14 @@ const DirsSchema = new Schema({
   date: {
     type: Date,
     default: Date.now
+  },
+  format: { // IMAGE || VIDEO
+    type: String,
+    required: true
+  },
+  type: { // FILE || FOLDER
+    type: String,
+    required: true
   }
 });
 

@@ -50,8 +50,14 @@ router.post("/find", passpost.authenticate("jwt", { session: false }), (req, res
 router.post("/add", passpost.authenticate("jwt", { session: false }), (req, res) => {
     const dirsFields = {};
 
-    if (req.body.parentId) dirsFields.parentId = req.body.parentId;
+    if (req.body.parentId === '') {
+        dirsFields.parentId = '0'
+    } else {
+        dirsFields.parentId = req.body.parentId;
+    }
     if (req.body.name) dirsFields.name = req.body.name;
+    if (req.body.type) dirsFields.type = req.body.type;
+    if (req.body.format) dirsFields.format = req.body.format;
 
     new Dirs(dirsFields)
         .save()
@@ -74,19 +80,22 @@ router.post("/add", passpost.authenticate("jwt", { session: false }), (req, res)
  * @access private
  */
 router.post("/update", passpost.authenticate("jwt", { session: false }), async (req, res) => {
-    const id = req.body._id
-    Dirs.findByIdAndUpdate(id, { ...req.body }, (err, profile) => {
-        if (!err && profile) {
+    const id = req.body.id
+    Dirs.findByIdAndUpdate(id, { name: req.body.name }, (err, dir) => {
+        if (!err && dir) {
             res.json({
                 status: STATUS_CODE.SUCCESS,
-                data: profile
+                data: dir
             })
-        } else {
+            return
+        }
+        if (!dir) {
             res.json({
                 status: STATUS_CODE.ERROR,
-                err: err
+                msg: '没有找到！'
             })
         }
+
     })
 
 });
@@ -98,7 +107,7 @@ router.post("/update", passpost.authenticate("jwt", { session: false }), async (
  * @access private
  */
 router.post("/delete", passpost.authenticate("jwt", { session: false }), async (req, res) => {
-    const id = req.body._id
+    const id = req.body.id
 
     Dirs.findByIdAndRemove(id, (err, profile) => {
         // console.log('profile: ', {err, profile})
@@ -154,7 +163,7 @@ router.post("/batchDelete", passpost.authenticate("jwt", { session: false }), as
  */
 router.post("/list", (req, res, next) => {
     passpost.authenticate("jwt", { session: false }, (err, user, info) => {
-        // console.log({ err, user, info })
+        // console.log("111111111", { err, user, info })
         if (err) {
             res.json({ msg: '出现错误' })
             return
@@ -174,7 +183,7 @@ async function fetchDirsData(req, res) {
     for (const dir of dirs) {
         newDirs.push(dir.toJSON())
     }
-    
+
     const dirsData = convert(newDirs)
     res.json({
         data: dirsData,
@@ -189,15 +198,12 @@ function convert(list) {
     const map = list.reduce((res, v) => (res[v._id] = v, res), {})
 
     for (const item of list) {
-        if (!item.parentId) {
+        if (item.parentId === '0') {
             res.push(item)
             continue
         }
         if (item.parentId in map) {
-            // console.log('456456', Boolean(item.parentId in map), item.parentId)
-
             const parent = map[item.parentId]
-            // console.log('parent', {parent, res})
             parent.children = parent.children || []
             parent.children.push(item)
         }
@@ -205,17 +211,5 @@ function convert(list) {
     return res
 }
 
-function getRoots(dirs) {
-    let roots = [];
-    for (let i = 0; i < dirs.length; i++) {
-        if (!dirs[i].parentId) {
-            // roots.push(JSON.parse(JSON.stringify(dirs[i])));
-            roots.push(dirs[i]);
-
-        }
-    }
-
-    return roots
-}
 
 module.exports = router;
