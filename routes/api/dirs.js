@@ -172,14 +172,33 @@ router.post("/list", (req, res, next) => {
             res.json({ status: STATUS_CODE.NO_PERMISSION, msg: '没有访问权限' })
             return
         }
-        fetchDirsData(req, res)
+        if (req.body.id) {
+            fetchDirsDataByParentId(req, res)
+        } else {
+            fetchDirsData(req, res)
+        }
+
 
     })(req, res, next);
 });
+async function fetchDirsDataByParentId(req, res) {
+    const newDirs = []
+    const dirs = await Dirs.find({parentId: req.body.id, format: req.body.format})
+    res.json({
+        data: dirs,
+        status: STATUS_CODE.SUCCESS,
+    })
+}
 
 async function fetchDirsData(req, res) {
+    console.log(req.body)
+
+    const findData = {
+        type: req.body.type || '',
+        format: req.body.format || ''
+    }
     const newDirs = []
-    const dirs = await Dirs.find()
+    const dirs = await Dirs.find(findData)
     for (const dir of dirs) {
         newDirs.push(dir.toJSON())
     }

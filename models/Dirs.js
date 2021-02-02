@@ -25,6 +25,10 @@ const DirsSchema = new Schema({
   type: { // FILE || FOLDER
     type: String,
     required: true
+  },
+  url: {
+    type: String,
+    required: false
   }
 });
 
