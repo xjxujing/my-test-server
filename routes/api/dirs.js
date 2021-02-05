@@ -57,7 +57,7 @@ router.post("/add", passpost.authenticate("jwt", { session: false }), (req, res)
     }
     if (req.body.name) dirsFields.name = req.body.name;
     if (req.body.type) dirsFields.type = req.body.type;
-    if (req.body.format) dirsFields.format = req.body.format;
+    // if (req.body.format) dirsFields.format = req.body.format;
 
     new Dirs(dirsFields)
         .save()
@@ -172,37 +172,41 @@ router.post("/list", (req, res, next) => {
             res.json({ status: STATUS_CODE.NO_PERMISSION, msg: '没有访问权限' })
             return
         }
+
+
         if (req.body.id) {
-            fetchDirsDataByParentId(req, res)
-        } else {
-            fetchDirsData(req, res)
+            // 根据 id, 查询文件夹下面的内容(匹配 parentId), 根据 type 分类
+            fetchDirsDataByParentIdAndType(req, res)
         }
 
-
+        // 只查文件夹，返回树结构
+        if (req.body.type === 'FOLDER') { fetchFolderTree(req, res) }
     })(req, res, next);
 });
-async function fetchDirsDataByParentId(req, res) {
-    const newDirs = []
-    const dirs = await Dirs.find({parentId: req.body.id, format: req.body.format})
+async function fetchDirsDataByParentIdAndType(req, res) {
+    const queryType = req.body.type.split(',').join('|')
+
+    console.log('queryType', queryType)
+
+    // const type = 'IMAGE|FOLDER'
+    const regexType = new RegExp(`\^${queryType}\$`)
+
+    const dirs = await Dirs.find({ parentId: req.body.id, type: { $regex: regexType } })
     res.json({
         data: dirs,
         status: STATUS_CODE.SUCCESS,
     })
 }
 
-async function fetchDirsData(req, res) {
-    console.log(req.body)
-
+async function fetchFolderTree(req, res) {
     const findData = {
         type: req.body.type || '',
-        format: req.body.format || ''
     }
     const newDirs = []
     const dirs = await Dirs.find(findData)
     for (const dir of dirs) {
         newDirs.push(dir.toJSON())
     }
-
     const dirsData = convert(newDirs)
     res.json({
         data: dirsData,

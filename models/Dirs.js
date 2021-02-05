@@ -18,11 +18,11 @@ const DirsSchema = new Schema({
     type: Date,
     default: Date.now
   },
-  format: { // IMAGE || VIDEO
-    type: String,
-    required: true
-  },
-  type: { // FILE || FOLDER
+  // format: { // 
+  //   type: String,
+  //   required: true
+  // },
+  type: { //   FOLDER | IMAGE | VIDEO
     type: String,
     required: true
   },
