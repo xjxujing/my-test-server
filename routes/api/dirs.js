@@ -48,6 +48,7 @@ router.post("/find", passpost.authenticate("jwt", { session: false }), (req, res
  * @access private
  */
 router.post("/add", passpost.authenticate("jwt", { session: false }), (req, res) => {
+    console.log('res', res)
     const dirsFields = {};
 
     if (req.body.parentId === '') {
